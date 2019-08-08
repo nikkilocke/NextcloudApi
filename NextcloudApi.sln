@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29001.49
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NextcloudApi", "NextcloudApi\NextcloudApi.csproj", "{9E19E60A-BE03-4547-897D-9A599C09AD40}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{D27B1986-F585-4269-956C-6AE994C2C295}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9E19E60A-BE03-4547-897D-9A599C09AD40}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E19E60A-BE03-4547-897D-9A599C09AD40}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E19E60A-BE03-4547-897D-9A599C09AD40}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E19E60A-BE03-4547-897D-9A599C09AD40}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D27B1986-F585-4269-956C-6AE994C2C295}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D27B1986-F585-4269-956C-6AE994C2C295}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D27B1986-F585-4269-956C-6AE994C2C295}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D27B1986-F585-4269-956C-6AE994C2C295}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5698FB60-E594-43DF-A115-9579A5005E0B}
+	EndGlobalSection
+EndGlobal
