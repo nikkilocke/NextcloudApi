@@ -66,6 +66,12 @@ namespace Tests {
 				Console.WriteLine(o);
 		}
 
+		public static void ShowList<T>(Task<List<T>> task) {
+			List<T> result = RunTest(task);
+			foreach (T o in result)
+				Console.WriteLine(o);
+		}
+
 		const string alphabet = "ybndrfg8ejkmcpqxot1uwisza345h769";
 
 		public string UniqueId() {
@@ -167,11 +173,19 @@ namespace Tests {
 	public class FolderTests : TestBase {
 		[TestMethod]
 		public void List() {
-			Console.WriteLine(String.Join("\r\n", RunTest(CloudFolder.List(Api, Settings.Username)).Select(i => i.ToString())));
+			ShowList(CloudFolder.List(Api, Settings.Username));
 		}
 		[TestMethod]
 		public void ListAll() {
-			Console.WriteLine(String.Join("\r\n", RunTest(CloudFolder.List(Api, Settings.Username, CloudInfo.Properties.All)).Select(i => i.ToString())));
+			ShowList(CloudFolder.List(Api, Settings.Username, CloudInfo.Properties.All));
+		}
+		[TestMethod]
+		public void Favorites() {
+			string docs = Settings.Username + "/Documents";
+			RunTest(CloudFolder.SetFavorite(Api, docs, true));
+			ShowList(CloudFolder.GetFavorites(Api, Settings.Username, CloudInfo.Properties.All));
+			RunTest(CloudFolder.SetFavorite(Api, docs, true));
+			ShowList(CloudFolder.GetFavorites(Api, Settings.Username));
 		}
 		[TestMethod]
 		public void CreateFolder() {

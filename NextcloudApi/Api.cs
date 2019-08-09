@@ -452,8 +452,9 @@ namespace NextcloudApi {
 							content = "File: " + content;
 						} else if (postParameters is HttpContent) {
 							message.Content = (HttpContent)postParameters;
-						} else if(postParameters is XElement) {
-							message.Content = disposeMe.Add(new StringContent(postParameters.ToString()));
+						} else if(postParameters is XElement || postParameters is XDocument) {
+							content = postParameters.ToString();
+							message.Content = disposeMe.Add(new StringContent(content));
 						} else {
 							content = postParameters.ToJson();
 							message.Content = disposeMe.Add(new FormUrlEncodedContent(postParameters.ToCollection()));

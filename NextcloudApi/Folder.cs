@@ -14,6 +14,9 @@ namespace NextcloudApi {
 		protected static readonly HttpMethod MKCOL = new HttpMethod("MKCOL");
 		protected static readonly HttpMethod MOVE = new HttpMethod("MOVE");
 		protected static readonly HttpMethod COPY = new HttpMethod("COPY");
+		protected static readonly HttpMethod PROPPATCH = new HttpMethod("PROPPATCH");
+		protected static readonly HttpMethod REPORT = new HttpMethod("REPORT");
+		protected static readonly HttpMethod SEARCH = new HttpMethod("SEARCH");
 		[Flags]
 		public enum Properties {
 			LastModified = 1,
@@ -101,12 +104,83 @@ namespace NextcloudApi {
 		public string QuotaAvailable;
 
 		static public async Task<List<CloudInfo>> List(Api api, string path, Properties properties = Properties.Basic) {
-			XElement postParams = null;
-			if(properties != Properties.Basic) {
-				postParams = new XElement("{DAV:}propfind");
+			XDocument postParams = EncodeProperties(properties);
+			string data = await GetResponse(api, PROPFIND, path, postParams);
+			XElement result = XElement.Parse(data);
+			return new List<CloudInfo>(result.Elements().Select(t => CloudInfo.Parse(t)));
+		}
+
+		static public async Task Create(Api api, string path) {
+			await GetResponse(api, MKCOL, path);
+		}
+
+		static public async Task Delete(Api api, string path) {
+			await GetResponse(api, HttpMethod.Delete, path);
+		}
+
+		static public async Task Move(Api api, string source, string dest) {
+			await GetResponse(api, MOVE, source, null, new { Destination = api.MakeUri(Api.Combine("remote.php/dav/files", dest)) });
+		}
+
+		static public async Task SetFavorite(Api api, string path, bool favorite) {
+			XDocument postParams = new XDocument();
+			XElement p = new XElement("{DAV:}propertyupdate");
+			postParams.Add(p);
+			XElement set = new XElement("{DAV:}set");
+			p.Add(set);
+			XElement prop = new XElement("{DAV:}prop");
+			set.Add(prop);
+			prop.Add(new XElement("{http://owncloud.org/ns}favorite", favorite ? "1" : "0"));
+			await GetResponse(api, PROPPATCH, path, postParams);
+		}
+
+		static public async Task<List<CloudInfo>> GetFavorites(Api api, string path, Properties properties = Properties.Basic) {
+			XDocument postParams = new XDocument();
+			XElement p = new XElement("{http://owncloud.org/ns}filter-files");
+			postParams.Add(p);
+			XElement rules = new XElement("{http://owncloud.org/ns}filter-rules");
+			p.Add(rules);
+			rules.Add(new XElement("{http://owncloud.org/ns}favorite", "1"));
+			XDocument propParams = EncodeProperties(properties);
+			if(propParams != null)
+				p.Add(propParams.Element("{DAV:}propfind").Element("{DAV:}prop"));
+			string data = await GetResponse(api, REPORT, path, postParams);
+			XElement result = XElement.Parse(data);
+			return new List<CloudInfo>(result.Elements().Select(t => CloudInfo.Parse(t)));
+		}
+
+
+		static async Task<string> GetResponse(Api api, HttpMethod method, string path = null, XDocument postParams = null, object headers = null) {
+			if (path == null) {
+				path = "remote.php/dav";
+			} else {
+				path = path.Replace("\\", "/");
+				while (path.StartsWith("/"))
+					path = path.Substring(1);
+				if (Regex.IsMatch(path, @"/\.*/"))
+					throw new ApplicationException("Invalid path:" + path);
+				path = Api.Combine("remote.php/dav/files", path);
+			}
+			string uri = api.MakeUri(path);
+			using (HttpResponseMessage response = await api.SendMessageAsyncAndGetResponse(method, uri, postParams, headers)) {
+				string data = await response.Content.ReadAsStringAsync();
+				if (api.Settings.LogResult > 0 || !response.IsSuccessStatusCode)
+					api.Log("Received Data -> " + data);
+				if (!response.IsSuccessStatusCode)
+					throw new ApiException(response.ReasonPhrase, data);
+				return data;
+			}
+		}
+
+		static XDocument EncodeProperties(Properties properties) {
+			XDocument postParams = null;
+			if (properties != Properties.Basic) {
+				postParams = new XDocument();
+				XElement p = new XElement("{DAV:}propfind");
+				postParams.Add(p);
 				XElement prop = new XElement("{DAV:}prop");
-				postParams.Add(prop);
-				prop.Add(new XElement("{DAV:}resourcetype"));	// Always ask for this, it's how we tell folder from file
+				p.Add(prop);
+				prop.Add(new XElement("{DAV:}resourcetype"));   // Always ask for this, it's how we tell folder from file
 				if (properties.HasFlag(Properties.LastModified))
 					prop.Add(new XElement("{DAV:}getlastmodified"));
 				if (properties.HasFlag(Properties.Tag))
@@ -144,38 +218,8 @@ namespace NextcloudApi {
 				if (properties.HasFlag(Properties.QuotaAvailable))
 					prop.Add(new XElement("{DAV:}quota-available-bytes"));
 			}
-			string data = await GetResponse(api, PROPFIND, path, postParams);
-			XElement result = XElement.Parse(data);
-			return new List<CloudInfo>(result.Elements().Select(t => CloudInfo.Parse(t)));
+			return postParams;
 		}
 
-		static public async Task Create(Api api, string path) {
-			await GetResponse(api, MKCOL, path);
-		}
-
-		static public async Task Delete(Api api, string path) {
-			await GetResponse(api, HttpMethod.Delete, path);
-		}
-
-		static public async Task Move(Api api, string source, string dest) {
-			await GetResponse(api, MOVE, source, null, new { Destination = api.MakeUri(Api.Combine("remote.php/dav/files", dest)) });
-		}
-
-		static async Task<string> GetResponse(Api api, HttpMethod method, string path, XElement postParams = null, object headers = null) {
-			path = path.Replace("\\", "/");
-			while (path.StartsWith("/"))
-				path = path.Substring(1);
-			if (Regex.IsMatch(path, @"/\.*/"))
-				throw new ApplicationException("Invalid path:" + path);
-			string uri = api.MakeUri(Api.Combine("remote.php/dav/files", path));
-			using (HttpResponseMessage response = await api.SendMessageAsyncAndGetResponse(method, uri, postParams, headers)) {
-				string data = await response.Content.ReadAsStringAsync();
-				if (api.Settings.LogResult > 0 || !response.IsSuccessStatusCode)
-					api.Log("Received Data -> " + data);
-				if (!response.IsSuccessStatusCode)
-					throw new ApiException(response.ReasonPhrase, data);
-				return data;
-			}
-		}
 	}
 }
