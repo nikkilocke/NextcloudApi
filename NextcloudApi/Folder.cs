@@ -149,6 +149,11 @@ namespace NextcloudApi {
 			return new List<CloudInfo>(result.Elements().Select(t => CloudInfo.Parse(t)));
 		}
 
+		static public async Task<List<CloudInfo>> Search(Api api, XDocument query) {
+			string data = await GetResponse(api, REPORT, null, query);
+			XElement result = XElement.Parse(data);
+			return new List<CloudInfo>(result.Elements().Select(t => CloudInfo.Parse(t)));
+		}
 
 		static async Task<string> GetResponse(Api api, HttpMethod method, string path = null, XDocument postParams = null, object headers = null) {
 			if (path == null) {
