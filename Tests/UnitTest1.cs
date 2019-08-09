@@ -163,4 +163,23 @@ namespace Tests {
 			RunTest(GroupFolder.Delete(Api, g.id));
 		}
 	}
+	[TestClass]
+	public class FolderTests : TestBase {
+		[TestMethod]
+		public void List() {
+			Console.WriteLine(String.Join("\r\n", RunTest(CloudFolder.List(Api, Settings.Username)).Select(i => i.ToString())));
+		}
+		[TestMethod]
+		public void ListAll() {
+			Console.WriteLine(String.Join("\r\n", RunTest(CloudFolder.List(Api, Settings.Username, CloudInfo.Properties.All)).Select(i => i.ToString())));
+		}
+		[TestMethod]
+		public void CreateFolder() {
+			RunTest(CloudFolder.Create(Api, Settings.Username + "/Documents/test"));
+		}
+		[TestMethod]
+		public void DeleteFolder() {
+			RunTest(CloudFolder.Delete(Api, Settings.Username + "/Documents/test"));
+		}
+	}
 }

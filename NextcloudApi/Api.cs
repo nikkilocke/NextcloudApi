@@ -13,6 +13,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.Xml;
+using Newtonsoft.Json;
+using System.Xml.Linq;
 
 namespace NextcloudApi {
 	public class Api : IDisposable {
@@ -98,7 +101,7 @@ namespace NextcloudApi {
 		/// <param name="postParameters">Any post parameters to pass (in an object or JObject)</param>
 		public async Task<JObject> PostAsync(string application, object getParameters = null, object postParameters = null) {
 			await LoginOrRefreshIfRequiredAsync();
-			string uri = makeUri(application);
+			string uri = MakeUri(application);
 			uri = AddGetParams(uri, getParameters);
 			return await SendMessageAsync(HttpMethod.Post, uri, postParameters);
 		}
@@ -123,7 +126,7 @@ namespace NextcloudApi {
 		/// <param name="getParameters">Any get parameters to pass (in an object or JObject)</param>
 		public async Task<JObject> GetAsync(string application, object getParameters = null) {
 			await LoginOrRefreshIfRequiredAsync();
-			string uri = makeUri(application);
+			string uri = MakeUri(application);
 			uri = AddGetParams(uri, getParameters);
 			return await SendMessageAsync(HttpMethod.Get, uri);
 		}
@@ -148,7 +151,7 @@ namespace NextcloudApi {
 		/// <param name="postParameters">Any post parameters to pass (in an object or JObject)</param>
 		public async Task<JObject> PutAsync(string application, object getParameters = null, object postParameters = null) {
 			await LoginOrRefreshIfRequiredAsync();
-			string uri = makeUri(application);
+			string uri = MakeUri(application);
 			uri = AddGetParams(uri, getParameters);
 			return await SendMessageAsync(HttpMethod.Put, uri, postParameters);
 		}
@@ -172,7 +175,7 @@ namespace NextcloudApi {
 		/// <param name="getParameters">Any get parameters to pass (in an object or JObject)</param>
 		public async Task<JObject> DeleteAsync(string application, object getParameters = null) {
 			await LoginOrRefreshIfRequiredAsync();
-			string uri = makeUri(application);
+			string uri = MakeUri(application);
 			uri = AddGetParams(uri, getParameters);
 			return await SendMessageAsync(HttpMethod.Delete, uri);
 		}
@@ -233,7 +236,7 @@ namespace NextcloudApi {
 		/// </param>
 		/// <returns>The result as a JObject, with MetaData filled in.</returns>
 		public async Task<JObject> PostFormAsync(string application, object getParameters, object postParameters, params string[] fileParameterNames) {
-			string uri = AddGetParams(makeUri(application), getParameters);
+			string uri = AddGetParams(MakeUri(application), getParameters);
 			using (DisposableCollection objectsToDispose = new DisposableCollection()) { 
 				MultipartFormDataContent content = objectsToDispose.Add(new MultipartFormDataContent());
 				JObject data = postParameters.ToJObject();
@@ -278,7 +281,7 @@ namespace NextcloudApi {
 			});
 			Token token = result.ToObject<Token>();
 			if (string.IsNullOrEmpty(token.access_token))
-				throw new ApiException("No access token returned", result);
+				throw new ApiException("No access token returned", result.ToHumanReadableJson());
 			updateToken(token);
 		}
 
@@ -295,7 +298,7 @@ namespace NextcloudApi {
 			});
 			Token token = result.ToObject<Token>();
 			if (string.IsNullOrEmpty(token.access_token))
-				throw new ApiException("No access token returned", result);
+				throw new ApiException("No access token returned", result.ToHumanReadableJson());
 			updateToken(token);
 		}
 
@@ -416,7 +419,7 @@ namespace NextcloudApi {
 		/// <param name="method">Get/Post/etc.</param>
 		/// <param name="uri">The full Uri you want to call (including any get parameters)</param>
 		/// <param name="postParameters">Post parameters as an object or JObject</param>
-		public async Task<HttpResponseMessage> SendMessageAsyncAndGetResponse(HttpMethod method, string uri, object postParameters = null) {
+		public async Task<HttpResponseMessage> SendMessageAsyncAndGetResponse(HttpMethod method, string uri, object postParameters = null, object headerParameters = null) {
 			for (; ; ) {
 				string content = null;
 				using (DisposableCollection disposeMe = new DisposableCollection()) {
@@ -430,6 +433,11 @@ namespace NextcloudApi {
 					message.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html"));
 					message.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
 					message.Headers.Add("User-Agent", Settings.ApplicationName);
+					if(headerParameters != null) {
+						foreach(var h in headerParameters.ToJson().ToCollection()) {
+							message.Headers.Add(h.Key, h.Value);
+						}
+					}
 					if (postParameters != null) {
 						if (postParameters is FileStream f) {
 							content = Path.GetFileName(f.Name);
@@ -444,6 +452,8 @@ namespace NextcloudApi {
 							content = "File: " + content;
 						} else if (postParameters is HttpContent) {
 							message.Content = (HttpContent)postParameters;
+						} else if(postParameters is XElement) {
+							message.Content = disposeMe.Add(new StringContent(postParameters.ToString()));
 						} else {
 							content = postParameters.ToJson();
 							message.Content = disposeMe.Add(new FormUrlEncodedContent(postParameters.ToCollection()));
@@ -512,9 +522,6 @@ namespace NextcloudApi {
 					j["content"] = data;
 			}
 			JObject metadata = new JObject();
-			if (!result.IsSuccessStatusCode && j.ContainsKey("status_code")) {
-				metadata["Error"] = j;
-			}
 			metadata["Uri"] = uri;
 			IEnumerable<string> values;
 			if (result.Headers.TryGetValues("Last-Modified", out values)) metadata["Modified"] = values.FirstOrDefault();
@@ -522,7 +529,7 @@ namespace NextcloudApi {
 			if (Settings.LogResult > 0 || !result.IsSuccessStatusCode)
 				Log("Received Data -> " + j);
 			if (!result.IsSuccessStatusCode)
-				throw new ApiException(result.ReasonPhrase, j);
+				throw new ApiException(result.ReasonPhrase, j.ToHumanReadableJson());
 			return j;
 		}
 
@@ -631,7 +638,7 @@ Content-Type: text/html; charset=UTF-8
 		/// Make the standard Uri (put BaseUri and CompanyId on the front)
 		/// </summary>
 		/// <param name="application">The remainder of the Uri</param>
-		protected string makeUri(string application) {
+		public string MakeUri(string application) {
 			return _http.IsMatch(application) ? application : Settings.ServerUri + application;
 		}
 
@@ -641,16 +648,10 @@ Content-Type: text/html; charset=UTF-8
 	/// Exception to hold more information when an API call fails
 	/// </summary>
 	public class ApiException : ApplicationException {
-		static string getMessage(string message, JObject result) {
-			string m = result["message"] + "";
-			if (!string.IsNullOrEmpty(m))
-				message = m;
-			return message;
-		}
-		public ApiException(string message, JObject result) : base(getMessage(message, result)) {
+		public ApiException(string message, string result) : base(message) {
 			Result = result;
 		}
-		public JObject Result { get; private set; }
+		public string Result { get; private set; }
 		public override string ToString() {
 			return base.ToString() + "\r\nResult = " + Result;
 		}

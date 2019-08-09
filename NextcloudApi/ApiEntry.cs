@@ -6,6 +6,8 @@ using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml.Linq;
+using System.Xml.XPath;
 
 namespace NextcloudApi {
 	public class UnixMsecDateTimeConverter : Newtonsoft.Json.JsonConverter {
@@ -117,6 +119,13 @@ namespace NextcloudApi {
 				   (token.Type == JTokenType.String && token.ToString() == String.Empty) ||
 				   (token.Type == JTokenType.Null);
 		}
+
+#if false
+		public static void Get<T>(this XElement element, string path, out T value) {
+			XElement r = element.XPathSelectElements(path).FirstOrDefault();
+			value = r == null ? default(T) : (T)Convert.ChangeType(r.Value, typeof(T));
+		}
+#endif
 
 	}
 
