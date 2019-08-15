@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
@@ -10,13 +11,6 @@ using System.Xml.Linq;
 
 namespace NextcloudApi {
 	public class CloudInfo : ApiEntryBase {
-		protected static readonly HttpMethod PROPFIND = new HttpMethod("PROPFIND");
-		protected static readonly HttpMethod MKCOL = new HttpMethod("MKCOL");
-		protected static readonly HttpMethod MOVE = new HttpMethod("MOVE");
-		protected static readonly HttpMethod COPY = new HttpMethod("COPY");
-		protected static readonly HttpMethod PROPPATCH = new HttpMethod("PROPPATCH");
-		protected static readonly HttpMethod REPORT = new HttpMethod("REPORT");
-		protected static readonly HttpMethod SEARCH = new HttpMethod("SEARCH");
 		[Flags]
 		public enum Properties {
 			LastModified = 1,
@@ -44,7 +38,7 @@ namespace NextcloudApi {
 		[JsonProperty("href")]
 		public string Path;
 		[JsonProperty("getlastmodified")]
-		public DateTime LastModified;
+		public DateTime? LastModified;
 		[JsonProperty("getetag")]
 		public string Tag;
 		[JsonProperty("id")]
@@ -52,13 +46,13 @@ namespace NextcloudApi {
 		[JsonProperty("fileid")]
 		public string FileId;
 		[JsonProperty("favorite")]
-		public int Favorite;
+		public int? Favorite;
 		[JsonProperty("comments-href")]
 		public string CommentsHref;
 		[JsonProperty("comments-count")]
-		public int CommentsCount;
+		public int? CommentsCount;
 		[JsonProperty("comments-unread")]
-		public int CommentsUnread;
+		public int? CommentsUnread;
 		[JsonProperty("owner-id")]
 		public string OwnerId;
 		[JsonProperty("owner-display-name")]
@@ -68,116 +62,35 @@ namespace NextcloudApi {
 		[JsonProperty("checksums")]
 		public string Checksums;
 		[JsonProperty("size")]
-		public long Size;
+		public long? Size;
 
-		static public void FillJObject(JObject j, XElement x) {
-			foreach (XElement e in x.Elements()) {
-				if (e.HasElements)
-					FillJObject(j, e);
-				else
-					j[e.Name.LocalName] = e.Value;
-
-			}
-		}
 		static public CloudInfo Parse(XElement data) {
 			JObject props = new JObject();
-			FillJObject(props, data);
-			System.Diagnostics.Debug.WriteLine(props.ToHumanReadableJson());
+			Api.FillJObject(props, data);
 			if (props["collection"] == null)
 				return props.ToObject<CloudFile>();
 			return props.ToObject<CloudFolder>();
 		}
 
-	}
-	public class CloudFile : CloudInfo {
-		[JsonProperty("has-preview")]
-		public string HasPreview;
-		[JsonProperty("getcontentlength")]
-		public long Length;
-		[JsonProperty("getcontenttype")]
-		public string Type;
-	}
-	public class CloudFolder : CloudInfo {
-		[JsonProperty("quota-used")]
-		public string QuotaUsed;
-		[JsonProperty("quota-available")]
-		public string QuotaAvailable;
+		static public string ConvertFilePathToUriPath(string path) {
+			path = path.Replace("\\", "/");
+			while (path.StartsWith("/"))
+				path = path.Substring(1);
+			if (Regex.IsMatch(path, @"/\.*/"))
+				throw new ApplicationException("Invalid path:" + path);
+			return Api.Combine("remote.php/dav/files", path);
+		}
 
-		static public async Task<List<CloudInfo>> List(Api api, string path, Properties properties = Properties.Basic) {
+		static public async Task<CloudInfo> GetProperties(Api api, string path, Properties properties = Properties.Basic) {
 			XDocument postParams = EncodeProperties(properties);
-			string data = await GetResponse(api, PROPFIND, path, postParams);
-			XElement result = XElement.Parse(data);
-			return new List<CloudInfo>(result.Elements().Select(t => CloudInfo.Parse(t)));
+			XElement data = await api.SendMessageAsyncAndGetXmlResponse(Api.PROPFIND, ConvertFilePathToUriPath(path), postParams,
+				new {
+					Depth = 0
+				});
+			return CloudInfo.Parse(data.Elements().First());
 		}
 
-		static public async Task Create(Api api, string path) {
-			await GetResponse(api, MKCOL, path);
-		}
-
-		static public async Task Delete(Api api, string path) {
-			await GetResponse(api, HttpMethod.Delete, path);
-		}
-
-		static public async Task Move(Api api, string source, string dest) {
-			await GetResponse(api, MOVE, source, null, new { Destination = api.MakeUri(Api.Combine("remote.php/dav/files", dest)) });
-		}
-
-		static public async Task SetFavorite(Api api, string path, bool favorite) {
-			XDocument postParams = new XDocument();
-			XElement p = new XElement("{DAV:}propertyupdate");
-			postParams.Add(p);
-			XElement set = new XElement("{DAV:}set");
-			p.Add(set);
-			XElement prop = new XElement("{DAV:}prop");
-			set.Add(prop);
-			prop.Add(new XElement("{http://owncloud.org/ns}favorite", favorite ? "1" : "0"));
-			await GetResponse(api, PROPPATCH, path, postParams);
-		}
-
-		static public async Task<List<CloudInfo>> GetFavorites(Api api, string path, Properties properties = Properties.Basic) {
-			XDocument postParams = new XDocument();
-			XElement p = new XElement("{http://owncloud.org/ns}filter-files");
-			postParams.Add(p);
-			XElement rules = new XElement("{http://owncloud.org/ns}filter-rules");
-			p.Add(rules);
-			rules.Add(new XElement("{http://owncloud.org/ns}favorite", "1"));
-			XDocument propParams = EncodeProperties(properties);
-			if(propParams != null)
-				p.Add(propParams.Element("{DAV:}propfind").Element("{DAV:}prop"));
-			string data = await GetResponse(api, REPORT, path, postParams);
-			XElement result = XElement.Parse(data);
-			return new List<CloudInfo>(result.Elements().Select(t => CloudInfo.Parse(t)));
-		}
-
-		static public async Task<List<CloudInfo>> Search(Api api, XDocument query) {
-			string data = await GetResponse(api, REPORT, null, query);
-			XElement result = XElement.Parse(data);
-			return new List<CloudInfo>(result.Elements().Select(t => CloudInfo.Parse(t)));
-		}
-
-		static async Task<string> GetResponse(Api api, HttpMethod method, string path = null, XDocument postParams = null, object headers = null) {
-			if (path == null) {
-				path = "remote.php/dav";
-			} else {
-				path = path.Replace("\\", "/");
-				while (path.StartsWith("/"))
-					path = path.Substring(1);
-				if (Regex.IsMatch(path, @"/\.*/"))
-					throw new ApplicationException("Invalid path:" + path);
-				path = Api.Combine("remote.php/dav/files", path);
-			}
-			string uri = api.MakeUri(path);
-			using (HttpResponseMessage response = await api.SendMessageAsyncAndGetResponse(method, uri, postParams, headers)) {
-				string data = await response.Content.ReadAsStringAsync();
-				if (api.Settings.LogResult > 0 || !response.IsSuccessStatusCode)
-					api.Log("Received Data -> " + data);
-				if (!response.IsSuccessStatusCode)
-					throw new ApiException(response.ReasonPhrase, data);
-				return data;
-			}
-		}
-
-		static XDocument EncodeProperties(Properties properties) {
+		protected static XDocument EncodeProperties(Properties properties) {
 			XDocument postParams = null;
 			if (properties != Properties.Basic) {
 				postParams = new XDocument();
@@ -224,6 +137,83 @@ namespace NextcloudApi {
 					prop.Add(new XElement("{DAV:}quota-available-bytes"));
 			}
 			return postParams;
+		}
+
+	}
+
+	public class CloudFile : CloudInfo {
+		[JsonProperty("has-preview")]
+		public string HasPreview;
+		[JsonProperty("getcontentlength")]
+		public long Length;
+		[JsonProperty("getcontenttype")]
+		public string Type;
+
+		static public async Task<string> Upload(Api api, string path, Stream file) {
+			XElement result = await api.SendMessageAsyncAndGetXmlResponse(HttpMethod.Put, ConvertFilePathToUriPath(path), file);
+			return result.Element("OC-FileId").Value;
+		}
+	}
+
+	public class CloudFolder : CloudInfo {
+		[JsonProperty("quota-used")]
+		public string QuotaUsed;
+		[JsonProperty("quota-available")]
+		public string QuotaAvailable;
+
+		static public async Task<List<CloudInfo>> List(Api api, string path, Properties properties = Properties.Basic, int maxDepth = -1) {
+			XDocument postParams = EncodeProperties(properties);
+			object headers = null;
+			if (maxDepth >= 0)
+				headers = new {
+					Depth = maxDepth
+				};
+			XElement result = await api.SendMessageAsyncAndGetXmlResponse(Api.PROPFIND, ConvertFilePathToUriPath(path), postParams, headers);
+			return new List<CloudInfo>(result.Elements().Select(t => CloudInfo.Parse(t)));
+		}
+
+		static public async Task Create(Api api, string path) {
+			await api.SendMessageAsyncAndGetStringResponse(Api.MKCOL, ConvertFilePathToUriPath(path));
+		}
+
+		static public async Task Delete(Api api, string path) {
+			await api.SendMessageAsyncAndGetStringResponse(HttpMethod.Delete, ConvertFilePathToUriPath(path));
+		}
+
+		static public async Task Move(Api api, string source, string dest) {
+			await api.SendMessageAsyncAndGetStringResponse(Api.MOVE, source, "remote.php/dav", new { Destination = api.MakeUri(Api.Combine("remote.php/dav/files", dest)) });
+		}
+
+		static public async Task SetFavorite(Api api, string path, bool favorite) {
+			XDocument postParams = new XDocument();
+			XElement p = new XElement("{DAV:}propertyupdate");
+			postParams.Add(p);
+			XElement set = new XElement("{DAV:}set");
+			p.Add(set);
+			XElement prop = new XElement("{DAV:}prop");
+			set.Add(prop);
+			prop.Add(new XElement("{http://owncloud.org/ns}favorite", favorite ? "1" : "0"));
+			await api.SendMessageAsyncAndGetStringResponse(Api.PROPPATCH, ConvertFilePathToUriPath(path), postParams);
+		}
+
+		static public async Task<List<CloudInfo>> GetFavorites(Api api, string path, Properties properties = Properties.Basic) {
+			XDocument postParams = new XDocument();
+			XElement p = new XElement("{http://owncloud.org/ns}filter-files");
+			postParams.Add(p);
+			XElement rules = new XElement("{http://owncloud.org/ns}filter-rules");
+			p.Add(rules);
+			rules.Add(new XElement("{http://owncloud.org/ns}favorite", "1"));
+			XDocument propParams = EncodeProperties(properties);
+			if(propParams != null)
+				p.Add(propParams.Element("{DAV:}propfind").Element("{DAV:}prop"));
+			string data = await api.SendMessageAsyncAndGetStringResponse(Api.REPORT, ConvertFilePathToUriPath(path), postParams);
+			XElement result = XElement.Parse(data);
+			return new List<CloudInfo>(result.Elements().Select(t => CloudInfo.Parse(t)));
+		}
+
+		static public async Task<List<CloudInfo>> Search(Api api, XDocument query) {
+			XElement result = await api.SendMessageAsyncAndGetXmlResponse(Api.REPORT, "remote.php/dav", query);
+			return new List<CloudInfo>(result.Elements().Select(t => CloudInfo.Parse(t)));
 		}
 
 	}

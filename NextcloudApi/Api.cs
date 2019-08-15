@@ -19,6 +19,14 @@ using System.Xml.Linq;
 
 namespace NextcloudApi {
 	public class Api : IDisposable {
+		public static readonly HttpMethod PROPFIND = new HttpMethod("PROPFIND");
+		public static readonly HttpMethod MKCOL = new HttpMethod("MKCOL");
+		public static readonly HttpMethod MOVE = new HttpMethod("MOVE");
+		public static readonly HttpMethod COPY = new HttpMethod("COPY");
+		public static readonly HttpMethod PROPPATCH = new HttpMethod("PROPPATCH");
+		public static readonly HttpMethod REPORT = new HttpMethod("REPORT");
+		public static readonly HttpMethod SEARCH = new HttpMethod("SEARCH");
+		public static readonly HttpMethod PROPGET = new HttpMethod("PROPGET");
 		HttpClient _client;
 		CookieContainer _cookies;
 
@@ -434,22 +442,26 @@ namespace NextcloudApi {
 					message.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
 					message.Headers.Add("User-Agent", Settings.ApplicationName);
 					if(headerParameters != null) {
-						foreach(var h in headerParameters.ToJson().ToCollection()) {
+						foreach(var h in headerParameters.ToCollection()) {
 							message.Headers.Add(h.Key, h.Value);
 						}
 					}
 					if (postParameters != null) {
-						if (postParameters is FileStream f) {
-							content = Path.GetFileName(f.Name);
-							f.Position = 0;
+						if (postParameters is Stream f) {
 							message.Content = disposeMe.Add(new StreamContent(f));
-							string contentType = MimeMapping.MimeUtility.GetMimeMapping(content);
-							message.Content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
-							message.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") {
-								FileName = content
-							};
 							message.Content.Headers.ContentLength = f.Length;
-							content = "File: " + content;
+							f.Position = 0;
+							if (f is FileStream) {
+								content = Path.GetFileName((f as FileStream).Name);
+								string contentType = MimeMapping.MimeUtility.GetMimeMapping(content);
+								message.Content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+								message.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") {
+									FileName = content
+								};
+								content = "File: " + content;
+							} else {
+								content = "Stream";
+							}
 						} else if (postParameters is HttpContent) {
 							message.Content = (HttpContent)postParameters;
 						} else if(postParameters is XElement || postParameters is XDocument) {
@@ -457,7 +469,8 @@ namespace NextcloudApi {
 							message.Content = disposeMe.Add(new StringContent(content));
 						} else {
 							content = postParameters.ToJson();
-							message.Content = disposeMe.Add(new FormUrlEncodedContent(postParameters.ToCollection()));
+							message.Content = disposeMe.Add(new StringContent(content, Encoding.UTF8, "application/json"));
+							//	message.Content = disposeMe.Add(new FormUrlEncodedContent(postParameters.ToCollection()));
 						}
 					}
 					HttpResponseMessage result;
@@ -498,6 +511,48 @@ namespace NextcloudApi {
 				}
 			}
 		}
+
+		public async Task<string> SendMessageAsyncAndGetStringResponse(HttpMethod method, string path, object postParams = null, object headers = null) {
+			string uri = MakeUri(path);
+			using (HttpResponseMessage response = await SendMessageAsyncAndGetResponse(method, uri, postParams, headers)) {
+				string data = await response.Content.ReadAsStringAsync();
+				if (Settings.LogResult > 0 || !response.IsSuccessStatusCode)
+					Log("Received Data -> " + data);
+				if (!response.IsSuccessStatusCode)
+					throw new ApiException(response.ReasonPhrase, data);
+				if (string.IsNullOrEmpty(data)) {
+					XElement root = new XElement("headers");
+					foreach (var h in response.Headers) {
+						root.Add(new XElement(h.Key, h.Value));
+					}
+					data = root.ToString();
+				}
+				return data;
+			}
+		}
+
+		public async Task<XElement> SendMessageAsyncAndGetXmlResponse(HttpMethod method, string path, object postParams = null, object headers = null) {
+			string data = await SendMessageAsyncAndGetStringResponse(method, path, postParams, headers);
+			return XElement.Parse(data);
+		}
+
+		public async Task<JObject> SendMessageAsyncAndGetJsonResponse(HttpMethod method, string path, object postParams = null, object headers = null) {
+			XElement data = await SendMessageAsyncAndGetXmlResponse(method, path, postParams, headers);
+			JObject j = new JObject();
+			FillJObject(j, data);
+			return j;
+		}
+
+		static public void FillJObject(JObject j, XElement x) {
+			foreach (XElement e in x.Elements()) {
+				if (e.HasElements)
+					FillJObject(j, e);
+				else
+					j[e.Name.LocalName] = e.Value;
+
+			}
+		}
+
 
 		string basicAuth() {
 			byte[] data = Encoding.UTF8.GetBytes(Settings.Username + ":" + Settings.Password);

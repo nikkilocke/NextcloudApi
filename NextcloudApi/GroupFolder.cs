@@ -21,7 +21,7 @@ namespace NextcloudApi {
 		}
 
 		static public async Task<GroupFolder> Get(Api api, int folderId) {
-			OcsEntry result = await api.GetAsync<OcsEntry>(Api.Combine("/index.php/apps/groupfolders/folders", folderId));
+			OcsEntry result = await api.GetAsync<OcsEntry>(Api.Combine("index.php/apps/groupfolders/folders", folderId));
 			return result.ocs.data.ConvertToObject<GroupFolder>();
 		}
 
@@ -30,7 +30,7 @@ namespace NextcloudApi {
 		}
 
 		static public async Task AddGroup(Api api, int folderId, string group) {
-			await api.PostAsync(Api.Combine("/index.php/apps/groupfolders/folders", folderId, "groups"), null, new { group });
+			await api.PostAsync(Api.Combine("index.php/apps/groupfolders/folders", folderId, "groups"), null, new { group });
 		}
 
 		public async Task AddGroup(Api api, string group) {
@@ -38,7 +38,7 @@ namespace NextcloudApi {
 		}
 
 		static public async Task RemoveGroup(Api api, int folderId, string group) {
-			await api.DeleteAsync(Api.Combine("/index.php/apps/groupfolders/folders", folderId, "groups", group));
+			await api.DeleteAsync(Api.Combine("index.php/apps/groupfolders/folders", folderId, "groups", group));
 		}
 
 		public async Task RemoveGroup(Api api, string group) {
@@ -56,7 +56,7 @@ namespace NextcloudApi {
 		}
 
 		static public async Task SetPermissions(Api api, int folderId, string group, Permissions permissions) {
-			await api.PostAsync(Api.Combine("/index.php/apps/groupfolders/folders", folderId, "groups", group), null, new {
+			await api.PostAsync(Api.Combine("index.php/apps/groupfolders/folders", folderId, "groups", group), null, new {
 				permissions = (int)permissions
 			});
 		}
@@ -66,7 +66,7 @@ namespace NextcloudApi {
 		}
 
 		static public async Task SetQuota(Api api, int folderId, long quota) {
-			await api.PostAsync(Api.Combine("/index.php/apps/groupfolders/folders", folderId, "quota"), null, new {
+			await api.PostAsync(Api.Combine("index.php/apps/groupfolders/folders", folderId, "quota"), null, new {
 				quota
 			});
 		}
@@ -76,7 +76,7 @@ namespace NextcloudApi {
 		}
 
 		static public async Task Rename(Api api, int folderId, string name) {
-			await api.PostAsync(Api.Combine("/index.php/apps/groupfolders/folders", folderId, "mountpoint"), null, new {
+			await api.PostAsync(Api.Combine("index.php/apps/groupfolders/folders", folderId, "mountpoint"), null, new {
 				mountpoint = name
 			});
 		}

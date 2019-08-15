@@ -177,7 +177,7 @@ namespace Tests {
 		}
 		[TestMethod]
 		public void ListAll() {
-			ShowList(CloudFolder.List(Api, Settings.Username, CloudInfo.Properties.All));
+			ShowList(CloudFolder.List(Api, Settings.Username + "/Documents", CloudInfo.Properties.All));
 		}
 		[TestMethod]
 		public void Favorites() {
@@ -194,6 +194,12 @@ namespace Tests {
 		[TestMethod]
 		public void DeleteFolder() {
 			RunTest(CloudFolder.Delete(Api, Settings.Username + "/Documents/test"));
+		}
+		[TestMethod]
+		public void ListComments() {
+			
+			CloudInfo props = RunTest(CloudInfo.GetProperties(Api, Settings.Username + "/Documents", CloudInfo.Properties.FileId));
+			ShowList(Comment.List(Api, props.FileId));
 		}
 	}
 }

@@ -256,12 +256,16 @@ namespace NextcloudApi {
 			if (!HasMoreData)
 				return null;
 			Request.offset += Request.limit;
-			JObject j = await api.SendMessageAsync(Request.PostParameters == null ? HttpMethod.Get : HttpMethod.Post, 
-				Api.AddGetParams(MetaData.Uri, new {
-					Request.search,
-					Request.offset, 
-					Request.limit
-					}), Request.PostParameters);
+			return await Read(api);
+		}
+
+		public virtual async Task<ApiList<T>> Read(Api api) {
+			JObject j = await api.SendMessageAsync(Request.PostParameters == null ? HttpMethod.Get : HttpMethod.Post,
+							Api.AddGetParams(MetaData.Uri, new {
+								Request.search,
+								Request.offset,
+								Request.limit
+							}), Request.PostParameters);
 			return Convert(j);
 		}
 

@@ -43,13 +43,15 @@ namespace NextcloudApi {
 		public JObject backendCapabilities;
 
 		static public async Task<ApiList<string>> List(Api api, ListRequest request = null) {
-			return await api.GetListAsync<string>("/ocs/v1.php/cloud/users", "ocs.data.users", request);
+			return await api.GetListAsync<string>("ocs/v1.php/cloud/users", "ocs.data.users", request);
 		}
 
 		static public async Task<User> Get(Api api, string userid = null) {
 			if (string.IsNullOrEmpty(userid))
 				userid = api.Settings.User;
-			OcsEntry entry = await api.GetAsync<OcsEntry>(Api.Combine("/ocs/v1.php/cloud/users", userid));
+			if (string.IsNullOrEmpty(userid))
+				userid = api.Settings.Username;
+			OcsEntry entry = await api.GetAsync<OcsEntry>(Api.Combine("ocs/v1.php/cloud/users", userid));
 			return entry.ocs.data.ConvertToObject<User>();
 		}
 
@@ -83,7 +85,7 @@ namespace NextcloudApi {
 		}
 
 		static public async Task<ApiList<string>> GetGroups(Api api, string userid, ListRequest request = null) {
-			return await api.GetListAsync<string>(Api.Combine("/ocs/v1.php/cloud/users", userid, "groups"), "ocs.data.groups", request);
+			return await api.GetListAsync<string>(Api.Combine("ocs/v1.php/cloud/users", userid, "groups"), "ocs.data.groups", request);
 		}
 
 		static public async Task AddToGroup(Api api, string userid, string groupid) {
@@ -111,11 +113,11 @@ namespace NextcloudApi {
 		}
 
 		static public async Task<ApiList<string>> GetSubadminGroups(Api api, string userid, ListRequest request = null) {
-			return await api.GetListAsync<string>(Api.Combine("/ocs/v1.php/cloud/users", userid, "subadmins"), "ocs.data", request);
+			return await api.GetListAsync<string>(Api.Combine("ocs/v1.php/cloud/users", userid, "subadmins"), "ocs.data", request);
 		}
 
 		static public async Task ResendWelcomeEmail(Api api, string userid) {
-			await api.PostAsync(Api.Combine("/ocs/v1.php/cloud/users", userid, "welcome"));
+			await api.PostAsync(Api.Combine("ocs/v1.php/cloud/users", userid, "welcome"));
 		}
 
 	}

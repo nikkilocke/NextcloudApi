@@ -69,8 +69,8 @@ namespace NextcloudApi {
 		/// The currently logged in user id (returned in token)
 		/// </summary>
 		string User { get; set; }
-		string Username { get; set; }
-		string Password { get; set; }
+		string Username { get; }
+		string Password { get; }
 
 		/// <summary>
 		/// If the access token is due to expire before this time elapses, refresh it
@@ -156,7 +156,7 @@ namespace NextcloudApi {
 		/// </summary>
 		public string User { get; set; }
 		public string Username { get; set; }
-		public string Password { get; set; }
+		public string Password { get; set;  }
 		/// <summary>
 		/// If the access token is due to expire before this time elapses, refresh it
 		/// </summary>
