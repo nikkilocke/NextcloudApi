@@ -15,7 +15,7 @@
     <PackageReleaseNotes>More access to group folders, folders, files and comments.
 Bug fixes.
 </PackageReleaseNotes>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
   </PropertyGroup>
 
   <ItemGroup>
