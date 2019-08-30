@@ -12,10 +12,8 @@
     <RepositoryUrl>https://github.com/nikkilocke/NextcloudAp</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
     <PackageTags>Nextcloud C# API</PackageTags>
-    <PackageReleaseNotes>More access to group folders, folders, files and comments.
-Bug fixes.
-</PackageReleaseNotes>
-    <Version>1.0.2</Version>
+    <PackageReleaseNotes>Separate error and log streams</PackageReleaseNotes>
+    <Version>1.0.3</Version>
   </PropertyGroup>
 
   <ItemGroup>
