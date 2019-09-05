@@ -57,6 +57,15 @@ namespace NextcloudApi {
 			return Newtonsoft.Json.JsonConvert.SerializeObject(o, Newtonsoft.Json.Formatting.Indented, _apiSettings);
 		}
 
+		public static string ToJsonString(this JToken token) {
+			switch (token.Type) {
+				case JTokenType.Boolean:
+					return token.ToString().ToLower();
+				default:
+					return token.ToString();
+			}
+		}
+
 		/// <summary>
 		/// Convert object to collection of KeyValuePairs, for posting as form data.
 		/// If one of the elements of o is an object, each member of the object is included separately
@@ -69,17 +78,17 @@ namespace NextcloudApi {
 					case JTokenType.Object:
 						foreach (JProperty s in ((JObject)v.Value).Properties()) {
 							if (s.Value.Type != JTokenType.Null)
-								yield return new KeyValuePair<string, string>($"{v.Name}[{s.Name}]", s.Value.ToString());
+								yield return new KeyValuePair<string, string>($"{v.Name}[{s.Name}]", s.Value.ToJsonString());
 						}
 						break;
 					case JTokenType.Array:
 						foreach (JToken a in ((JArray)v.Value))
-							yield return new KeyValuePair<string, string>(v.Name + "[]", a.ToString());
+							yield return new KeyValuePair<string, string>(v.Name + "[]", a.ToJsonString());
 						break;
 					case JTokenType.Null:
 						break;
 					default:
-						yield return new KeyValuePair<string, string>(v.Name, v.Value.ToString());
+						yield return new KeyValuePair<string, string>(v.Name, v.Value.ToJsonString());
 						break;
 				}
 			}
