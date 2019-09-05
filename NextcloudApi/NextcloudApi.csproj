@@ -12,8 +12,8 @@
     <RepositoryUrl>https://github.com/nikkilocke/NextcloudAp</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
     <PackageTags>Nextcloud C# API</PackageTags>
-    <PackageReleaseNotes>Separate error and log streams</PackageReleaseNotes>
-    <Version>1.0.3</Version>
+    <PackageReleaseNotes>Fix bug in list retrieval</PackageReleaseNotes>
+    <Version>1.0.4</Version>
   </PropertyGroup>
 
   <ItemGroup>

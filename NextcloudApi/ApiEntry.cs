@@ -299,7 +299,7 @@ namespace NextcloudApi {
 
 	public class ApiCollection<T> : ApiList<T> {
 		public override ApiList<T> Convert(JObject j) {
-			JObject col = (JObject)j.SelectToken(Path);
+			JToken col = j.SelectToken(Path);
 			return new ApiCollection<T>() {
 				MetaData = j["MetaData"].ConvertToObject<MetaData>(),
 				Request = Request,
