@@ -583,9 +583,13 @@ namespace NextcloudApi {
 			IEnumerable<string> values;
 			if (result.Headers.TryGetValues("Last-Modified", out values)) metadata["Modified"] = values.FirstOrDefault();
 			j["MetaData"] = metadata;
-			if (Settings.LogResult > 0 || !result.IsSuccessStatusCode)
+			bool success = result.IsSuccessStatusCode;
+			JToken r = j.SelectToken("ocs.meta.status");
+			if (r != null && r.ToString() == "failure")
+				success = false;
+			if (Settings.LogResult > 0 || !success)
 				Log("Received Data -> " + j);
-			if (!result.IsSuccessStatusCode)
+			if (!success)
 				throw new ApiException(result.ReasonPhrase, j.ToHumanReadableJson());
 			return j;
 		}
