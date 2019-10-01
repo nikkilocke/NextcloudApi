@@ -584,13 +584,17 @@ namespace NextcloudApi {
 			if (result.Headers.TryGetValues("Last-Modified", out values)) metadata["Modified"] = values.FirstOrDefault();
 			j["MetaData"] = metadata;
 			bool success = result.IsSuccessStatusCode;
+			string problem = result.ReasonPhrase;
 			JToken r = j.SelectToken("ocs.meta.status");
-			if (r != null && r.ToString() == "failure")
+			if (r != null && r.ToString() == "failure") {
 				success = false;
+				r = j.SelectToken("ocs.meta.message");
+				problem = r == null ? "Failure" : r.ToString();
+			}
 			if (Settings.LogResult > 0 || !success)
 				Log("Received Data -> " + j);
 			if (!success)
-				throw new ApiException(result.ReasonPhrase, j.ToHumanReadableJson());
+				throw new ApiException(problem, j.ToHumanReadableJson());
 			return j;
 		}
 

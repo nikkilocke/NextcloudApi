@@ -12,8 +12,8 @@
     <RepositoryUrl>https://github.com/nikkilocke/NextcloudAp</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
     <PackageTags>Nextcloud C# API</PackageTags>
-    <PackageReleaseNotes>Detect failure in ocs calls.</PackageReleaseNotes>
-    <Version>1.0.6</Version>
+    <PackageReleaseNotes>Get failure reason when detecting error in ocs calls.</PackageReleaseNotes>
+    <Version>1.0.7</Version>
   </PropertyGroup>
 
   <ItemGroup>
