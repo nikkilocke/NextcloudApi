@@ -90,6 +90,16 @@ namespace NextcloudApi {
 		public event LogHandler ErrorMessage;
 
 		/// <summary>
+		/// The most recent requests sent
+		/// </summary>
+		public string LastRequest;
+
+		/// <summary>
+		/// The most recent response received
+		/// </summary>
+		public string LastResponse;
+
+		/// <summary>
 		/// Post to the Api, returning an object
 		/// </summary>
 		/// <typeparam name="T">The object type expected</typeparam>
@@ -431,6 +441,8 @@ namespace NextcloudApi {
 		/// <param name="uri">The full Uri you want to call (including any get parameters)</param>
 		/// <param name="postParameters">Post parameters as an object or JObject</param>
 		public async Task<HttpResponseMessage> SendMessageAsyncAndGetResponse(HttpMethod method, string uri, object postParameters = null, object headerParameters = null) {
+			LastRequest = "";
+			LastResponse = "";
 			for (; ; ) {
 				string content = null;
 				using (DisposableCollection disposeMe = new DisposableCollection()) {
@@ -476,18 +488,16 @@ namespace NextcloudApi {
 							//	message.Content = disposeMe.Add(new FormUrlEncodedContent(postParameters.ToCollection()));
 						}
 					}
+					LastRequest = "{message}:{content}";
 					HttpResponseMessage result;
 					int backoff = 500;
 					int delay;
 					if (Settings.LogRequest > 0)
 						Log($"Sent -> {(Settings.LogRequest > 1 ? message.ToString() : message.RequestUri.ToString())}:{content}");
 					result = await _client.SendAsync(message);
+					LastResponse = result.ToString();
 					if (Settings.LogResult > 1)
 						Log($"Received -> {result}");
-					if (!result.IsSuccessStatusCode) {
-						Error($"Message -> {message}:{content}");
-						Error($"Response -> {result}");
-					}
 					switch (result.StatusCode) {
 						case HttpStatusCode.Found:      // Redirect
 							uri = result.Headers.Location.AbsoluteUri;
@@ -514,34 +524,51 @@ namespace NextcloudApi {
 		}
 
 		public async Task<string> SendMessageAsyncAndGetStringResponse(HttpMethod method, string path, object postParams = null, object headers = null) {
-			string uri = MakeUri(path);
-			using (HttpResponseMessage response = await SendMessageAsyncAndGetResponse(method, uri, postParams, headers)) {
-				string data = await response.Content.ReadAsStringAsync();
-				if (Settings.LogResult > 0 || !response.IsSuccessStatusCode)
-					Log("Received Data -> " + data);
-				if (!response.IsSuccessStatusCode)
-					throw new ApiException(response.ReasonPhrase, data);
-				if (string.IsNullOrEmpty(data)) {
-					XElement root = new XElement("headers");
-					foreach (var h in response.Headers) {
-						root.Add(new XElement(h.Key, h.Value));
+			try {
+				string uri = MakeUri(path);
+				using (HttpResponseMessage response = await SendMessageAsyncAndGetResponse(method, uri, postParams, headers)) {
+					string data = await response.Content.ReadAsStringAsync();
+					LastResponse += "\n" + data;
+					if (Settings.LogResult > 0 || !response.IsSuccessStatusCode)
+						Log("Received Data -> " + data);
+					if (!response.IsSuccessStatusCode)
+						throw new ApiException(response.ReasonPhrase, data);
+					if (string.IsNullOrEmpty(data)) {
+						XElement root = new XElement("headers");
+						foreach (var h in response.Headers) {
+							root.Add(new XElement(h.Key, h.Value));
+						}
+						data = root.ToString();
+						LastResponse += data;
 					}
-					data = root.ToString();
+					return data;
 				}
-				return data;
+			} catch (Exception ex) {
+				Error($"{ex.Message}\n{LastRequest}\n{LastResponse}");
+				throw;
 			}
 		}
 
 		public async Task<XElement> SendMessageAsyncAndGetXmlResponse(HttpMethod method, string path, object postParams = null, object headers = null) {
 			string data = await SendMessageAsyncAndGetStringResponse(method, path, postParams, headers);
-			return XElement.Parse(data);
+			try {
+				return XElement.Parse(data);
+			} catch (Exception ex) {
+				Error($"{ex.Message}\n{LastRequest}\n{LastResponse}");
+				throw;
+			}
 		}
 
 		public async Task<JObject> SendMessageAsyncAndGetJsonResponse(HttpMethod method, string path, object postParams = null, object headers = null) {
 			XElement data = await SendMessageAsyncAndGetXmlResponse(method, path, postParams, headers);
-			JObject j = new JObject();
-			FillJObject(j, data);
-			return j;
+			try {
+				JObject j = new JObject();
+				FillJObject(j, data);
+				return j;
+			} catch (Exception ex) {
+				Error($"{ex.Message}\n{LastRequest}\n{LastResponse}");
+				throw;
+			}
 		}
 
 		static public void FillJObject(JObject j, XElement x) {
@@ -565,37 +592,43 @@ namespace NextcloudApi {
 		/// </summary>
 		/// <param name="uri">To store in the MetaData</param>
 		async Task<JObject> parseJObjectFromResponse(string uri, HttpResponseMessage result) {
-			JObject j = null;
-			string data = await result.Content.ReadAsStringAsync();
-			if (data.StartsWith("{")) {
-				j = JObject.Parse(data);
-			} else if (data.StartsWith("[")) {
-				j = new JObject {
-					["List"] = JArray.Parse(data)
-				};
-			} else {
-				j = new JObject();
-				if (!string.IsNullOrEmpty(data))
-					j["content"] = data;
+			try {
+				JObject j = null;
+				string data = await result.Content.ReadAsStringAsync();
+				LastResponse += "\n" + data;
+				if (data.StartsWith("{")) {
+					j = JObject.Parse(data);
+				} else if (data.StartsWith("[")) {
+					j = new JObject {
+						["List"] = JArray.Parse(data)
+					};
+				} else {
+					j = new JObject();
+					if (!string.IsNullOrEmpty(data))
+						j["content"] = data;
+				}
+				JObject metadata = new JObject();
+				metadata["Uri"] = uri;
+				IEnumerable<string> values;
+				if (result.Headers.TryGetValues("Last-Modified", out values)) metadata["Modified"] = values.FirstOrDefault();
+				j["MetaData"] = metadata;
+				bool success = result.IsSuccessStatusCode;
+				string problem = result.ReasonPhrase;
+				JToken r = j.SelectToken("ocs.meta.status");
+				if (r != null && r.ToString() == "failure") {
+					success = false;
+					r = j.SelectToken("ocs.meta.message");
+					problem = r == null ? "Failure" : r.ToString();
+				}
+				if (Settings.LogResult > 0 || !success)
+					Log("Received Data -> " + j);
+				if (!success)
+					throw new ApiException(problem, j.ToHumanReadableJson());
+				return j;
+			} catch (Exception ex) {
+				Error($"{ex.Message}\n{LastRequest}\n{LastResponse}");
+				throw;
 			}
-			JObject metadata = new JObject();
-			metadata["Uri"] = uri;
-			IEnumerable<string> values;
-			if (result.Headers.TryGetValues("Last-Modified", out values)) metadata["Modified"] = values.FirstOrDefault();
-			j["MetaData"] = metadata;
-			bool success = result.IsSuccessStatusCode;
-			string problem = result.ReasonPhrase;
-			JToken r = j.SelectToken("ocs.meta.status");
-			if (r != null && r.ToString() == "failure") {
-				success = false;
-				r = j.SelectToken("ocs.meta.message");
-				problem = r == null ? "Failure" : r.ToString();
-			}
-			if (Settings.LogResult > 0 || !success)
-				Log("Received Data -> " + j);
-			if (!success)
-				throw new ApiException(problem, j.ToHumanReadableJson());
-			return j;
 		}
 
 		/// <summary>

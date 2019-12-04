@@ -61,7 +61,7 @@ namespace NextcloudApi {
 		public Mention[] mentions;
 
 		public static async Task Create(Api api, string fileId, string message) {
-			string result = await api.SendMessageAsyncAndGetStringResponse(HttpMethod.Post, Api.Combine("remote.php/dav/comments/files", fileId), 
+			await api.SendMessageAsyncAndGetStringResponse(HttpMethod.Post, Api.Combine("remote.php/dav/comments/files", fileId), 
 				new {
 					actorType = "users",
 					message,

@@ -206,8 +206,7 @@ namespace NextcloudApi {
 			XDocument propParams = EncodeProperties(properties);
 			if(propParams != null)
 				p.Add(propParams.Element("{DAV:}propfind").Element("{DAV:}prop"));
-			string data = await api.SendMessageAsyncAndGetStringResponse(Api.REPORT, ConvertFilePathToUriPath(path), postParams);
-			XElement result = XElement.Parse(data);
+			XElement result = await api.SendMessageAsyncAndGetXmlResponse(Api.REPORT, ConvertFilePathToUriPath(path), postParams);
 			return new List<CloudInfo>(result.Elements().Select(t => CloudInfo.Parse(t)));
 		}
 
