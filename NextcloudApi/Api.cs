@@ -304,7 +304,7 @@ namespace NextcloudApi {
 			});
 			Token token = result.ToObject<Token>();
 			if (string.IsNullOrEmpty(token.access_token))
-				throw new ApiException("No access token returned", result.ToHumanReadableJson());
+				throw new ApiException(this, "No access token returned");
 			updateToken(token);
 		}
 
@@ -321,7 +321,7 @@ namespace NextcloudApi {
 			});
 			Token token = result.ToObject<Token>();
 			if (string.IsNullOrEmpty(token.access_token))
-				throw new ApiException("No access token returned", result.ToHumanReadableJson());
+				throw new ApiException(this, "No access token returned");
 			updateToken(token);
 		}
 
@@ -529,10 +529,10 @@ namespace NextcloudApi {
 				using (HttpResponseMessage response = await SendMessageAsyncAndGetResponse(method, uri, postParams, headers)) {
 					string data = await response.Content.ReadAsStringAsync();
 					LastResponse += "\n" + data;
-					if (Settings.LogResult > 0 || !response.IsSuccessStatusCode)
+					if (Settings.LogResult > 0)
 						Log("Received Data -> " + data);
 					if (!response.IsSuccessStatusCode)
-						throw new ApiException(response.ReasonPhrase, data);
+						throw new ApiException(this, response.ReasonPhrase);
 					if (string.IsNullOrEmpty(data)) {
 						XElement root = new XElement("headers");
 						foreach (var h in response.Headers) {
@@ -543,9 +543,10 @@ namespace NextcloudApi {
 					}
 					return data;
 				}
-			} catch (Exception ex) {
-				Error($"{ex.Message}\n{LastRequest}\n{LastResponse}");
+			} catch (ApiException) {
 				throw;
+			} catch (Exception ex) {
+				throw new ApiException(this, ex);
 			}
 		}
 
@@ -554,8 +555,7 @@ namespace NextcloudApi {
 			try {
 				return XElement.Parse(data);
 			} catch (Exception ex) {
-				Error($"{ex.Message}\n{LastRequest}\n{LastResponse}");
-				throw;
+				throw new ApiException(this, ex);
 			}
 		}
 
@@ -566,8 +566,7 @@ namespace NextcloudApi {
 				FillJObject(j, data);
 				return j;
 			} catch (Exception ex) {
-				Error($"{ex.Message}\n{LastRequest}\n{LastResponse}");
-				throw;
+				throw new ApiException(this, ex);
 			}
 		}
 
@@ -620,14 +619,15 @@ namespace NextcloudApi {
 					r = j.SelectToken("ocs.meta.message");
 					problem = r == null ? "Failure" : r.ToString();
 				}
-				if (Settings.LogResult > 0 || !success)
+				if (Settings.LogResult > 0)
 					Log("Received Data -> " + j);
 				if (!success)
-					throw new ApiException(problem, j.ToHumanReadableJson());
+					throw new ApiException(this, problem);
 				return j;
-			} catch (Exception ex) {
-				Error($"{ex.Message}\n{LastRequest}\n{LastResponse}");
+			} catch (ApiException) {
 				throw;
+			} catch (Exception ex) {
+				throw new ApiException(this, ex);
 			}
 		}
 
@@ -746,12 +746,18 @@ Content-Type: text/html; charset=UTF-8
 	/// Exception to hold more information when an API call fails
 	/// </summary>
 	public class ApiException : ApplicationException {
-		public ApiException(string message, string result) : base(message) {
-			Result = result;
+		public ApiException(Api api, Exception ex) : base(ex.Message, ex) {
+			Request = api.LastRequest;
+			Response = api.LastResponse;
 		}
-		public string Result { get; private set; }
+		public ApiException(Api api, string message) : base(message) {
+			Request = api.LastRequest;
+			Response = api.LastResponse;
+		}
+		public string Request { get; private set; }
+		public string Response { get; private set; }
 		public override string ToString() {
-			return base.ToString() + "\r\nResult = " + Result;
+			return base.ToString() + "\r\nRequest = " + Request + "\r\nResult = " + Response;
 		}
 	}
 

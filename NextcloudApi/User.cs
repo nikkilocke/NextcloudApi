@@ -112,8 +112,9 @@ namespace NextcloudApi {
 			});
 		}
 
-		static public async Task<ApiList<string>> GetSubadminGroups(Api api, string userid, ListRequest request = null) {
-			return await api.GetListAsync<string>(Api.Combine("ocs/v1.php/cloud/users", userid, "subadmins"), "ocs.data", request);
+		static public async Task<List<string>> GetSubadminGroups(Api api, string userid) {
+			JObject j = await api.GetAsync(Api.Combine("ocs/v1.php/cloud/users", userid, "subadmins"));
+			return j.SelectToken("ocs.data").ConvertToObject<List<string>>();
 		}
 
 		static public async Task ResendWelcomeEmail(Api api, string userid) {

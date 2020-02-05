@@ -12,8 +12,9 @@
     <RepositoryUrl>https://github.com/nikkilocke/NextcloudAp</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
     <PackageTags>Nextcloud C# API</PackageTags>
-    <PackageReleaseNotes>Fix missing $ in string</PackageReleaseNotes>
-    <Version>1.0.9</Version>
+    <PackageReleaseNotes>User.GetSubadminGroups returns a plain list, not a paged one.
+LastRequest and LastResponse returned in Exceptions thrown, rather than always logged when there is an error.</PackageReleaseNotes>
+    <Version>1.0.11</Version>
   </PropertyGroup>
 
   <ItemGroup>
