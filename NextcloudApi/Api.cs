@@ -50,6 +50,11 @@ namespace NextcloudApi {
 		}
 
 		/// <summary>
+		/// HttpClient, so you can set a timeeout for long operations
+		/// </summary>
+		public HttpClient Client { get { return _client; } }
+
+		/// <summary>
 		/// The Settings object to use for this Api instance.
 		/// Will be Saved every time the AccessToken changes or is refreshed.
 		/// </summary>

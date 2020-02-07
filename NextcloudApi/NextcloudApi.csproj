@@ -12,9 +12,8 @@
     <RepositoryUrl>https://github.com/nikkilocke/NextcloudAp</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
     <PackageTags>Nextcloud C# API</PackageTags>
-    <PackageReleaseNotes>User.GetSubadminGroups returns a plain list, not a paged one.
-LastRequest and LastResponse returned in Exceptions thrown, rather than always logged when there is an error.</PackageReleaseNotes>
-    <Version>1.0.11</Version>
+    <PackageReleaseNotes>Expose HttpClient so you can set the timeout</PackageReleaseNotes>
+    <Version>1.0.12</Version>
   </PropertyGroup>
 
   <ItemGroup>
