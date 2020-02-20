@@ -95,7 +95,7 @@ namespace NextcloudApi {
 		}
 
 		static public async Task RemoveFromGroup(Api api, string userid, string groupid) {
-			await api.DeleteAsync(Api.Combine("ocs/v1.php/cloud/users", userid, "groups"), new {
+			await api.DeleteAsync(Api.Combine("ocs/v1.php/cloud/users", userid, "groups"), null, new {
 				groupid
 			});
 		}
@@ -107,7 +107,7 @@ namespace NextcloudApi {
 		}
 
 		static public async Task DemoteFromSubadminOfGroup(Api api, string userid, string groupid) {
-			await api.DeleteAsync(Api.Combine("ocs/v1.php/cloud/users", userid, "subadmins"), new {
+			await api.DeleteAsync(Api.Combine("ocs/v1.php/cloud/users", userid, "subadmins"), null, new {
 				groupid
 			});
 		}

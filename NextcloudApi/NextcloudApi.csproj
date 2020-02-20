@@ -12,8 +12,8 @@
     <RepositoryUrl>https://github.com/nikkilocke/NextcloudAp</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
     <PackageTags>Nextcloud C# API</PackageTags>
-    <PackageReleaseNotes>Expose HttpClient so you can set the timeout</PackageReleaseNotes>
-    <Version>1.0.12</Version>
+    <PackageReleaseNotes>FixUser.RemoveFromGroup and User.DemoteFromSubadminOfGroup</PackageReleaseNotes>
+    <Version>1.0.14</Version>
   </PropertyGroup>
 
   <ItemGroup>

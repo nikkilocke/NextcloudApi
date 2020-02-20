@@ -190,8 +190,8 @@ namespace NextcloudApi {
 		/// <typeparam name="T">The object type expected</typeparam>
 		/// <param name="application">The part of the url after the company</param>
 		/// <param name="getParameters">Any get parameters to pass (in an object or JObject)</param>
-		public async Task<T> DeleteAsync<T>(string application, object getParameters = null) where T : new() {
-			JObject j = await DeleteAsync(application, getParameters);
+		public async Task<T> DeleteAsync<T>(string application, object getParameters = null, object postParameters = null) where T : new() {
+			JObject j = await DeleteAsync(application, getParameters, postParameters);
 			return convertTo<T>(j);
 		}
 
@@ -201,11 +201,11 @@ namespace NextcloudApi {
 		/// <typeparam name="T">The object type expected</typeparam>
 		/// <param name="application">The part of the url after the company</param>
 		/// <param name="getParameters">Any get parameters to pass (in an object or JObject)</param>
-		public async Task<JObject> DeleteAsync(string application, object getParameters = null) {
+		public async Task<JObject> DeleteAsync(string application, object getParameters = null, object postParameters = null) {
 			await LoginOrRefreshIfRequiredAsync();
 			string uri = MakeUri(application);
 			uri = AddGetParams(uri, getParameters);
-			return await SendMessageAsync(HttpMethod.Delete, uri);
+			return await SendMessageAsync(HttpMethod.Delete, uri, postParameters);
 		}
 
 		/// <summary>
