@@ -12,8 +12,8 @@
     <RepositoryUrl>https://github.com/nikkilocke/NextcloudAp</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
     <PackageTags>Nextcloud C# API</PackageTags>
-    <PackageReleaseNotes>FixUser.RemoveFromGroup and User.DemoteFromSubadminOfGroup</PackageReleaseNotes>
-    <Version>1.0.14</Version>
+    <PackageReleaseNotes>Fix Group Folder List</PackageReleaseNotes>
+    <Version>1.0.15</Version>
   </PropertyGroup>
 
   <ItemGroup>
