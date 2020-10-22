@@ -153,6 +153,12 @@ namespace NextcloudApi {
 			XElement result = await api.SendMessageAsyncAndGetXmlResponse(HttpMethod.Put, ConvertFilePathToUriPath(path), file);
 			return result.Element("OC-FileId").Value;
 		}
+		static public async Task<Stream> GetFileStream(Api api, string path)
+		{
+			HttpResponseMessage response = await api.SendMessageAsyncAndGetResponse(HttpMethod.Get, ConvertFilePathToUriPath(path));
+
+			return await response.Content.ReadAsStreamAsync();
+		}
 	}
 
 	public class CloudFolder : CloudInfo {
