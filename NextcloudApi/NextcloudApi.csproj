@@ -12,8 +12,8 @@
     <RepositoryUrl>https://github.com/nikkilocke/NextcloudAp</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
     <PackageTags>Nextcloud C# API</PackageTags>
-    <PackageReleaseNotes>Fix Group Folder List</PackageReleaseNotes>
-    <Version>1.0.15</Version>
+    <PackageReleaseNotes>Fix Group Member List</PackageReleaseNotes>
+    <Version>1.0.16</Version>
   </PropertyGroup>
 
   <ItemGroup>

@@ -13,10 +13,8 @@ namespace NextcloudApi {
 		public long size;
 		public bool acl;
 
-		static public async Task<List<GroupFolder>> List(Api api) {
-			JObject j = await api.GetAsync("index.php/apps/groupfolders/folders");
-			JToken col = j.SelectToken("ocs.data");
-			return new List<GroupFolder>(col.Values().Select(v => v.ConvertToObject<GroupFolder>()));
+		static public async Task<PlainList<GroupFolder>> List(Api api) {
+			return await api.GetPlainListAsync<GroupFolder>("index.php/apps/groupfolders/folders", "ocs.data");
 		}
 
 		static public async Task<int> Create(Api api, string name) {

@@ -72,6 +72,12 @@ namespace Tests {
 				Console.WriteLine(o);
 		}
 
+		public static void ShowList<T>(Task<PlainList<T>> task) {
+			PlainList<T> result = RunTest(task);
+			foreach (T o in result.List)
+				Console.WriteLine(o);
+		}
+
 		const string alphabet = "ybndrfg8ejkmcpqxot1uwisza345h769";
 
 		public string UniqueId() {

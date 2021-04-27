@@ -1,4 +1,7 @@
 ﻿using System.Threading.Tasks;
+using System.Linq;
+using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 
 namespace NextcloudApi {
 	public class Group {
@@ -10,8 +13,8 @@ namespace NextcloudApi {
 			await api.PostAsync("ocs/v1.php/cloud/groups", null, new { groupid });
 		}
 
-		static public async Task<ApiList<string>> GetMembers(Api api, string groupid, ListRequest request = null) {
-			return await api.GetListAsync<string>(Api.Combine("ocs/v1.php/cloud/groups", groupid), "ocs.data.users", request);
+		static public async Task<PlainList<string>> GetMembers(Api api, string groupid) {
+			return await api.GetPlainListAsync<string>(Api.Combine("ocs/v1.php/cloud/groups", groupid), "ocs.data.users");
 		}
 
 		static public async Task<ApiList<string>> GetSubadmins(Api api, string groupid, ListRequest request = null) {

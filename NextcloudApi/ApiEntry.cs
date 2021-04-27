@@ -205,6 +205,44 @@ namespace NextcloudApi {
 		public Ocs ocs;
 	}
 
+	/// <summary>
+	/// Standard Api call single page List return
+	/// </summary>
+	/// <typeparam name="T">The type of item in the List</typeparam>
+	public class PlainList<T> : ApiEntry {
+		public static PlainList<T> EmptyList(string uri) {
+			PlainList<T> list = new PlainList<T> {
+				MetaData = new MetaData() { Uri = uri }
+			};
+			return list;
+		}
+
+		public string Path;
+
+		/// <summary>
+		/// List of items
+		/// </summary>
+		public List<T> List = new List<T>();
+
+		/// <summary>
+		/// Number of items retrieved in this chunk.
+		/// </summary>
+		public int Count {
+			get { return List.Count; }
+		}
+
+		/// <summary>
+		/// Convert a JObject into the current type.
+		/// </summary>
+		public virtual PlainList<T> Convert(JObject j) {
+			return new PlainList<T>() {
+				MetaData = j["MetaData"].ConvertToObject<MetaData>(),
+				Path = Path,
+				List = j.SelectToken(Path).ConvertToObject<List<T>>()
+			};
+		}
+	}
+
 
 	/// <summary>
 	/// Requests to return lists which support paging
