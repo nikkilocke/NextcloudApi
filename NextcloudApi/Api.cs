@@ -222,6 +222,19 @@ namespace NextcloudApi {
 		}
 
 		/// <summary>
+		/// Get a plain list of items when the api returns an object collection instead of an array
+		/// </summary>
+		/// <typeparam name="T">PlainList type</typeparam>
+		/// <param name="application">Url to get</param>
+		/// <param name="path">Json path to the list in the returned object (e.g. "ocs.data.users")</param>
+		/// <returns>PlainList<typeparamref name="T"/></returns>
+		public async Task<PlainList<T>> GetPlainCollectionAsync<T>(string application, string path) {
+			JObject data = await GetAsync(application);
+			PlainList<T> result = new PlainCollection<T>() { Path = path };
+			return result.Convert(data);
+		}
+
+		/// <summary>
 		/// Get a paged list of items
 		/// </summary>
 		/// <typeparam name="T">Type of items in the list</typeparam>

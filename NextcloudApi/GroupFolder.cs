@@ -14,7 +14,7 @@ namespace NextcloudApi {
 		public bool acl;
 
 		static public async Task<PlainList<GroupFolder>> List(Api api) {
-			return await api.GetPlainListAsync<GroupFolder>("index.php/apps/groupfolders/folders", "ocs.data");
+			return await api.GetPlainCollectionAsync<GroupFolder>("index.php/apps/groupfolders/folders", "ocs.data");
 		}
 
 		static public async Task<int> Create(Api api, string name) {

@@ -356,4 +356,15 @@ namespace NextcloudApi {
 		}
 	}
 
+	public class PlainCollection<T> : PlainList<T> {
+		public override PlainList<T> Convert(JObject j) {
+			JToken col = j.SelectToken(Path);
+			return new PlainCollection<T>() {
+				MetaData = j["MetaData"].ConvertToObject<MetaData>(),
+				Path = Path,
+				List = new List<T>(col.Values().Select(v => v.ConvertToObject<T>()))
+			};
+		}
+	}
+
 }
