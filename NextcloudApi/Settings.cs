@@ -16,7 +16,7 @@ namespace NextcloudApi {
 		string ApplicationName { get; }
 
 		/// <summary>
-		/// Redirect uri for authorisation. Usually "http://localhost:port/". 
+		/// Redirect uri for authorisation. Usually "http://localhost:port/".
 		/// BaseCampApi will listen on the port to pick up the redirect during the authorisation process.
 		/// </summary>
 		Uri RedirectUri { get; }
@@ -78,13 +78,13 @@ namespace NextcloudApi {
 		TimeSpan RefreshTokenIfDueToExpireBefore { get; }
 
 		/// <summary>
-		/// Set to greater than zero to log all requests going to Basecamp. 
+		/// Set to greater than zero to log all requests going to Basecamp.
 		/// Larger numbers give more verbose logging.
 		/// </summary>
 		int LogRequest { get; }
 
 		/// <summary>
-		/// Set greater than zero to log all replies coming from Basecamp. 
+		/// Set greater than zero to log all replies coming from Basecamp.
 		/// Larger numbers give more verbose logging.
 		/// </summary>
 		int LogResult { get; }
@@ -106,7 +106,7 @@ namespace NextcloudApi {
 		/// </summary>
 		public string ApplicationName { get; set; }
 		/// <summary>
-		/// Redirect uri for authorisation. Usually "http://localhost:port/". 
+		/// Redirect uri for authorisation. Usually "http://localhost:port/".
 		/// BaseCampApi will listen on the port to pick up the redirect during the authorisation process.
 		/// </summary>
 		public Uri RedirectUri { get; set; }
@@ -162,13 +162,13 @@ namespace NextcloudApi {
 		/// </summary>
 		public TimeSpan RefreshTokenIfDueToExpireBefore { get; set; } = new TimeSpan(1, 0, 0, 0);
 		/// <summary>
-		/// Set to greater than zero to log all requests going to Basecamp. 
+		/// Set to greater than zero to log all requests going to Basecamp.
 		/// Larger numbers give more verbose logging.
 		/// </summary>
 		public int LogRequest { get; set; }
 
 		/// <summary>
-		/// Set greater than zero to log all replies coming from Basecamp. 
+		/// Set greater than zero to log all replies coming from Basecamp.
 		/// Larger numbers give more verbose logging.
 		/// </summary>
 		public int LogResult { get; set; }
@@ -216,6 +216,9 @@ namespace NextcloudApi {
 			List<string> errors = new List<string>();
 			if (ServerUri == null) {
 				errors.Add("ServerUri missing");
+			}
+			if (RedirectUri) == null) {
+				errors.Add("RedirectUri missing");
 			}
 			if (string.IsNullOrEmpty(ApplicationName)) {
 				errors.Add("ApplicationName missing");
