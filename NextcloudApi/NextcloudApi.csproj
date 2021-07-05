@@ -9,7 +9,7 @@
     <Copyright>(c) 2019 Trumphurst Ltd.</Copyright>
     <PackageLicenseFile>license.txt</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/nikkilocke/NextcloudApi</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/nikkilocke/NextcloudAp</RepositoryUrl>
+    <RepositoryUrl>https://github.com/nikkilocke/NextcloudApi</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
     <PackageTags>Nextcloud C# API</PackageTags>
     <PackageReleaseNotes>Fix Group Folder List</PackageReleaseNotes>
