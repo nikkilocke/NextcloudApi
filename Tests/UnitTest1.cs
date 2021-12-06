@@ -14,6 +14,7 @@ namespace Tests {
 		public bool DestructiveTests = false;
 		public string TestUser;
 		public string TestGroup;
+		public int TestGroupFolderID = 1;
 		public override List<string> Validate() {
 			List<string> errors = base.Validate();
 			return errors;
@@ -150,6 +151,9 @@ namespace Tests {
 		}
 	}
 	[TestClass]
+	/// <summary>
+	/// Must have Group Folders app enabled and set Settings:TestGroupFolderID
+	/// </summary>
 	public class GroupFolderTests : TestBase {
 		[TestMethod]
 		public void GetGroupFolders() {
@@ -157,7 +161,7 @@ namespace Tests {
 		}
 		[TestMethod]
 		public void GetGroupFolder() {
-			RunTest(GroupFolder.Get(Api, 1));
+			RunTest(GroupFolder.Get(Api, Settings.TestGroupFolderID));
 		}
 		[TestMethod]
 		public void CreateAndDelete() {
