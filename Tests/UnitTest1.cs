@@ -2,6 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NextcloudApi;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -14,7 +15,8 @@ namespace Tests {
 		public bool DestructiveTests = false;
 		public string TestUser;
 		public string TestGroup;
-		public int TestGroupFolderID = 1;
+		public int TestGroupFolderID;
+		public string TestShareID;
 		public override List<string> Validate() {
 			List<string> errors = base.Validate();
 			return errors;
@@ -53,7 +55,7 @@ namespace Tests {
 
 		public static T RunTest<T>(Task<T> task) {
 			T t = task.Result;
-			Console.WriteLine(t);
+			Trace.WriteLine(t);
 			return t;
 		}
 
@@ -64,19 +66,19 @@ namespace Tests {
 		public static void ShowList<T>(Task<ApiList<T>> task) {
 			ApiList<T> result = RunTest(task);
 			foreach (T o in result.All(Api))
-				Console.WriteLine(o);
+				Trace.WriteLine(o);
 		}
 
 		public static void ShowList<T>(Task<List<T>> task) {
 			List<T> result = RunTest(task);
 			foreach (T o in result)
-				Console.WriteLine(o);
+				Trace.WriteLine(o);
 		}
 
 		public static void ShowList<T>(Task<PlainList<T>> task) {
 			PlainList<T> result = RunTest(task);
 			foreach (T o in result.List)
-				Console.WriteLine(o);
+				Trace.WriteLine(o);
 		}
 
 		const string alphabet = "ybndrfg8ejkmcpqxot1uwisza345h769";
