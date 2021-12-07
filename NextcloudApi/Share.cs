@@ -113,18 +113,18 @@ namespace NextcloudApi
             return r.ocs.data["id"].Value<string>();
         }
 
-        public async Task Update(Api api)
+        public async Task Update(Api api, Share share)
         {
             var info = new
             {
-                permissions = permissions,
-                password = password,
-                expireDate = expiration,
-                note = note,
-                hideDownload = hide_download.ToString().ToLower()
+                permissions = share.permissions,
+                password = share.password,
+                expireDate = share.expiration,
+                note = share.note,
+                hideDownload = share.hide_download.ToString().ToLower()
             };
 
-            await api.PutAsync(Api.Combine("ocs/v2.php/apps/files_sharing/api/v1/shares", id), null, info);
+            await api.PutAsync(Api.Combine("ocs/v2.php/apps/files_sharing/api/v1/shares", share.id), null, info);
         }
 
 

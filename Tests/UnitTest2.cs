@@ -20,7 +20,13 @@ namespace Tests {
 		[TestMethod]
 		public void GetShare()
 		{
-			RunTest(Share.Get(Api, Settings.TestShareID));
+			RunTest(Share.Get(Api, "53"));
+		}
+		[TestMethod]
+		public void UpdateShare()
+		{
+			var share = RunTest(Share.Get(Api, "53"));
+			RunTest(share.Update(Api, share));
 		}
 		[TestMethod]
 		public void CreateAndDelete()
@@ -35,18 +41,20 @@ namespace Tests {
 		}
 
 		[TestMethod]
-		public void Update()
+		public void GetAndUpdate()
 		{
-			var share = RunTest(Share.Get(Api, "33"));
+            var shareID = "54";
+            var share = RunTest(Share.Get(Api, shareID));
 
-			share.permissions = 23;
-			share.password = "";
-			share.hide_download = false;
-			share.expiration = "2022-01-31";
+            share.permissions = 17;
+            share.password = "";
+            share.hide_download = false;
+            share.expiration = "2026-01-31";
 
-			RunTest(share.Update(Api));
+            RunTest(share.Update(Api, share));
 
-			var after = RunTest(Share.Get(Api, "33"));
+			var after = RunTest(Share.Get(Api, shareID));
+
 		}
 
 	}

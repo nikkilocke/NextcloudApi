@@ -16,7 +16,6 @@ namespace Tests {
 		public string TestUser;
 		public string TestGroup;
 		public int TestGroupFolderID;
-		public string TestShareID;
 		public override List<string> Validate() {
 			List<string> errors = base.Validate();
 			return errors;
@@ -163,7 +162,7 @@ namespace Tests {
 		}
 		[TestMethod]
 		public void GetGroupFolder() {
-			RunTest(GroupFolder.Get(Api, Settings.TestGroupFolderID));
+			RunTest(GroupFolder.Get(Api, 2));
 		}
 		[TestMethod]
 		public void CreateAndDelete() {
